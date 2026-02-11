@@ -3,15 +3,24 @@
 block_cipher = None
 
 a = Analysis(
-    ['main.py', 'groq_ai.py', 'speech_to_text.py', 'voice_player.py', 'pixie_web_chat.py', 'fox_image.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[
+        ('src', 'src'),  # Include entire src folder
         ('fox.png', '.'),
-        ('chat.html', '.'),
         ('.env', '.'),
     ],
     hiddenimports=[
+        # Core modules
+        'src.core.ai_engine',
+        'src.core.memory',
+        'src.ui.chat_window',
+        'src.utils.speech',
+        'src.utils.vision',
+        'src.utils.documents',
+        'src.utils.files',
+        # External dependencies
         'webview',
         'pystray',
         'PIL',
@@ -20,6 +29,12 @@ a = Analysis(
         'speech_recognition',
         'pyaudio',
         'tkinter',
+        'mem0',
+        'qdrant_client',
+        'PyPDF2',
+        'docx',
+        'pandas',
+        'openpyxl',
     ],
     hookspath=[],
     hooksconfig={},
@@ -47,7 +62,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,  # Set to True for debugging
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

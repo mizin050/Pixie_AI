@@ -1,0 +1,75 @@
+{
+  "send_whatsapp_message_john": {
+    "goal": "send whatsapp message to John",
+    "steps": [
+      {
+        "action": "Click WhatsApp search box",
+        "confidence": 0.85
+      },
+      {
+        "action": "Type 'John'",
+        "confidence": 0.9
+      },
+      {
+        "action": "Click on John's contact",
+        "confidence": 0.8
+      },
+      {
+        "action": "Type message",
+        "confidence": 0.95
+      },
+      {
+        "action": "Press Enter",
+        "confidence": 0.9
+      }
+    ],
+    "execution_time": 12.5,
+    "confidence": 0.88,
+    "created": "2026-02-10T22:47:32.851805",
+    "last_used": "2026-02-10T22:47:32.853467",
+    "use_count": 1,
+    "success_rate": 1.0
+  },
+  "open_notepad": {
+    "goal": "open notepad",
+    "steps": [
+      {
+        "action": "Press Windows key",
+        "confidence": 0.9
+      },
+      {
+        "action": "Type 'notepad'",
+        "confidence": 0.95
+      },
+      {
+        "action": "Press Enter",
+        "confidence": 0.9
+      }
+    ],
+    "execution_time": 5.0,
+    "confidence": 0.92,
+    "created": "2026-02-10T22:47:32.854582",
+    "last_used": "2026-02-10T22:47:32.854588",
+    "use_count": 1,
+    "success_rate": 1.0
+  },
+  "open_chrome_go_gmail.com": {
+    "goal": "open chrome and go to gmail.com",
+    "steps": [
+      {
+        "action": "Open Chrome",
+        "confidence": 0.95
+      },
+      {
+        "action": "Navigate to gmail.com",
+        "confidence": 0.9
+      }
+    ],
+    "execution_time": 8.0,
+    "confidence": 0.93,
+    "created": "2026-02-10T22:47:32.855182",
+    "last_used": "2026-02-10T22:47:32.855185",
+    "use_count": 1,
+    "success_rate": 1.0
+  }
+}

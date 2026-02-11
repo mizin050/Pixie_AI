@@ -1,7 +1,3 @@
-# Environment variables and secrets
-.env
-*.env
-
 # Python
 __pycache__/
 *.py[cod]
@@ -24,11 +20,14 @@ wheels/
 .installed.cfg
 *.egg
 
-# PyInstaller
-*.manifest
-*.spec.bak
-build/
-dist/
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables
+.env
 
 # IDE
 .vscode/
@@ -41,13 +40,16 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Debug files
-chat_debug.html
-*.log
-
-# Models (if large)
+# Project Specific
+chat_history.json
+mem0_db/
 models/
+*.spec
+build_exe.bat
+
+# Logs
+*.log
 
 # Temporary files
 *.tmp
-*.bak
+temp/
