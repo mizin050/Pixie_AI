@@ -15,7 +15,12 @@ from src.control.executor import execute_action
 from src.vision.capture import capture_screen
 from src.vision.vision_summary import create_summary
 from src.agent.learned_tools import get_learned_tools
+from src.agent.autonomous_brain import AutonomousBrain
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class OperatorEngine:
@@ -28,6 +33,14 @@ class OperatorEngine:
         self.operator_mode = False
         self.executing = False
         self.current_execution = None
+        
+        # Initialize autonomous brain
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            self.autonomous_brain = AutonomousBrain(api_key)
+        else:
+            self.autonomous_brain = None
+            print("⚠️  GEMINI_API_KEY not found - autonomous mode disabled")
         self.root_access = False  # Root access mode bypasses all approvals
         print("✓ Operator Engine initialized")
     
@@ -334,6 +347,17 @@ def get_response_operator(user_text: str) -> str:
         from src.core.ai_engine_tools import execute_with_tools
         print("\n🔧 Using tool-based execution for WhatsApp")
         return execute_with_tools(user_text)
+    
+    # Check for complex autonomous tasks (use autonomous brain)
+    autonomous_keywords = [
+        "build", "create app", "develop", "compile", "install",
+        "complex", "multi-step", "automate", "workflow"
+    ]
+    
+    if engine.autonomous_brain and any(keyword in text_lower for keyword in autonomous_keywords):
+        print("\n🧠 Using autonomous brain for complex task")
+        result = engine.autonomous_brain.execute_task(user_text)
+        return f"🤖 **Autonomous Execution Complete**\n\n{result}"
     
     # Check if this is an operator command
     if engine.is_operator_command(user_text):

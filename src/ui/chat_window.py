@@ -285,7 +285,7 @@ def _set_window_icon():
         # Try multiple times to find the window (it might not be ready immediately)
         hwnd = None
         for attempt in range(10):
-            hwnd = ctypes.windll.user32.FindWindowW(None, "Pixie AI")
+            hwnd = ctypes.windll.user32.FindWindowW(None, "Pixie")
             if hwnd:
                 print(f"✓ Found window (hwnd: {hwnd}) on attempt {attempt + 1}")
                 break

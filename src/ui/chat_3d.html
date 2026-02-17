@@ -37,16 +37,68 @@
       .image-side {
         flex: 1;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
         padding: 40px;
         max-width: calc(100% - 520px);
         position: relative;
+        gap: 20px;
+      }
+      .fox-container {
+        flex: 0 0 60%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 20px;
       }
       #fox-canvas {
         width: 100%;
         height: 100%;
         display: block;
+      }
+      .terminal-container {
+        flex: 0 0 35%;
+        background: rgba(20, 20, 30, 0.95);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 107, 53, 0.3);
+        padding: 16px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      .terminal-header {
+        font-family: "Syne", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ff6b35;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+      }
+      .terminal-content {
+        flex: 1;
+        overflow-y: auto;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #00ff00;
+      }
+      .terminal-line {
+        margin-bottom: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .terminal-line.command {
+        color: #00ffff;
+      }
+      .terminal-line.success {
+        color: #00ff00;
+      }
+      .terminal-line.error {
+        color: #ff4444;
+      }
+      .terminal-line.info {
+        color: #ffaa00;
       }
       .chat-side {
         width: 480px;
@@ -81,10 +133,11 @@
       }
       .chat-title {
         font-family: "Syne", sans-serif;
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 700;
         color: white;
         flex: 1;
+        letter-spacing: 0.5px;
       }
       .mode-toggle {
         padding: 8px 16px;
@@ -202,14 +255,23 @@
   <body>
     <div class="main-container">
       <div class="image-side">
-        <canvas id="fox-canvas"></canvas>
+        <div class="fox-container">
+          <canvas id="fox-canvas"></canvas>
+        </div>
+        <div class="terminal-container">
+          <div class="terminal-header">EXECUTION LOG</div>
+          <div class="terminal-content" id="terminalContent">
+            <div class="terminal-line info">
+              System ready. Waiting for commands...
+            </div>
+          </div>
+        </div>
       </div>
       <div class="chat-side">
         <div class="chat-container">
           <div class="chat-header">
-            <span class="chat-title">Pixie AI</span>
+            <span class="chat-title">Pixie</span>
             <button class="mode-toggle" id="modeToggle">
-              <span id="modeIcon">🤖</span>
               <span id="modeText">Operator</span>
             </button>
             <button class="clear-btn" onclick="clearScreen()">Clear</button>
@@ -285,9 +347,9 @@
       // Controls
       const controls = new OrbitControls(camera, canvas);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
+      controls.dampingFactor = 0.25;
       controls.enableZoom = true;
-      controls.autoRotate = true;
+      controls.autoRotate = false;
       controls.autoRotateSpeed = 2;
 
       // Load Fox Model
@@ -307,14 +369,14 @@
           console.log("Fox model loaded successfully!", gltf);
           const fox = gltf.scene;
           fox.scale.set(2, 2, 2);
-          fox.rotation.set(0, 200, 0);
+          fox.rotation.set((-30 * 3.14) / 360, -(2 * 3.14) / 4, 0);
           scene.add(fox);
           console.log("Fox added to scene");
 
           if (gltf.animations && gltf.animations.length) {
             mixer = new THREE.AnimationMixer(fox);
             gltf.animations.forEach((clip) => {
-              // mixer.clipAction(clip).play();
+              mixer.clipAction(clip).play();
             });
             console.log(`Playing ${gltf.animations.length} animations`);
           }
@@ -339,8 +401,8 @@
       function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
-        // if (mixer) mixer.update(delta);
-        // controls.update();
+        if (mixer) mixer.update(delta);
+        controls.update();
 
         renderer.render(scene, camera);
 
@@ -379,6 +441,12 @@
         messageInput.value = "";
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
+        // Log to terminal
+        addTerminalLog(
+          `User: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`,
+          "command",
+        );
+
         if (window.pywebview) {
           window.pywebview.api.send_message(text);
         }
@@ -407,24 +475,52 @@
       `;
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Log to terminal
+        addTerminalLog(
+          `AI: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`,
+          "success",
+        );
       };
 
       function clearScreen() {
         messagesContainer.innerHTML = "";
       }
 
+      // Terminal logging
+      window.addTerminalLog = function (message, type = "info") {
+        const terminal = document.getElementById("terminalContent");
+        const line = document.createElement("div");
+        line.className = `terminal-line ${type}`;
+        const timestamp = new Date().toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        line.textContent = `[${timestamp}] ${message}`;
+        terminal.appendChild(line);
+        terminal.scrollTop = terminal.scrollHeight;
+
+        // Keep only last 100 lines
+        while (terminal.children.length > 100) {
+          terminal.removeChild(terminal.firstChild);
+        }
+      };
+
       function toggleMode() {
         if (window.pywebview) {
           window.pywebview.api.toggle_operator_mode().then((result) => {
-            const modeIcon = document.getElementById("modeIcon");
             const modeText = document.getElementById("modeText");
             if (result.operator_mode) {
-              modeIcon.textContent = "🤖";
               modeText.textContent = "Operator";
             } else {
-              modeIcon.textContent = "💬";
               modeText.textContent = "Chat";
             }
+            addTerminalLog(
+              `Mode switched to: ${result.operator_mode ? "Operator" : "Chat"}`,
+              "info",
+            );
           });
         }
       }
