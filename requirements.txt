@@ -29,3 +29,8 @@ pyautogui>=0.9.54
 keyboard>=0.13.5
 playwright>=1.40.0
 pyperclip>=1.8.2
+
+# WhatsApp Free Options (Optional)
+pywhatkit>=5.4  # Free WhatsApp messaging
+selenium>=4.15.0  # Advanced WhatsApp automation
+webdriver-manager>=4.0.0  # Auto-install browser drivers
