@@ -111,6 +111,110 @@ class AutonomousBrain:
             self._log(f"   ✗ {error}", "error")
             return error
     
+    def open_browser(self, url: str) -> str:
+        """
+        Open a URL in browser using Selenium
+        
+        Args:
+            url: Website URL to open
+        
+        Returns:
+            Success message
+        """
+        self._log(f"\n🌐 Opening browser: {url}", "command")
+        
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            
+            chrome_options = Options()
+            # Don't use headless so user can see what's happening
+            
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.get(url)
+            
+            self._log(f"   ✓ Browser opened", "success")
+            
+            # Keep browser open - don't quit
+            return f"Browser opened at {url}. Browser window is now open."
+            
+        except Exception as e:
+            error = f"Error opening browser: {str(e)}"
+            self._log(f"   ✗ {error}", "error")
+            return error
+    
+    def browser_action(self, url: str, actions: list) -> str:
+        """
+        Perform actions in browser using Selenium
+        
+        Args:
+            url: Website URL
+            actions: List of actions to perform
+                    [{"type": "click", "selector": "button"}, 
+                     {"type": "type", "selector": "input", "text": "hello"}]
+        
+        Returns:
+            Result message
+        """
+        self._log(f"\n🌐 Browser automation: {url}", "command")
+        
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.common.keys import Keys
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from selenium.webdriver.chrome.options import Options
+            
+            chrome_options = Options()
+            driver = webdriver.Chrome(options=chrome_options)
+            
+            try:
+                # Open URL
+                self._log(f"   Opening {url}...", "info")
+                driver.get(url)
+                time.sleep(2)
+                
+                # Perform actions
+                for i, action in enumerate(actions):
+                    action_type = action.get("type")
+                    selector = action.get("selector")
+                    
+                    self._log(f"   Action {i+1}: {action_type} on {selector}", "info")
+                    
+                    # Wait for element
+                    element = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    
+                    if action_type == "click":
+                        element.click()
+                    elif action_type == "type":
+                        text = action.get("text", "")
+                        element.send_keys(text)
+                    elif action_type == "press":
+                        key = action.get("key", "ENTER")
+                        element.send_keys(getattr(Keys, key))
+                    
+                    time.sleep(1)
+                
+                self._log(f"   ✓ All actions completed", "success")
+                
+                # Keep browser open
+                time.sleep(3)
+                
+                return f"Browser actions completed successfully"
+                
+            finally:
+                # Don't close immediately - let user see result
+                time.sleep(5)
+                driver.quit()
+                
+        except Exception as e:
+            error = f"Error in browser automation: {str(e)}"
+            self._log(f"   ✗ {error}", "error")
+            return error
+    
     def take_screenshot(self, description: str = "") -> Dict[str, Any]:
         """Take a screenshot and return data"""
         if not self.gui_available:
@@ -352,6 +456,13 @@ If you cannot find it, respond:
                 args.get("reasoning", ""),
                 args.get("background", False),
                 args.get("timeout", 300)
+            )
+        elif function_name == "open_browser":
+            return self.open_browser(args.get("url", ""))
+        elif function_name == "browser_action":
+            return self.browser_action(
+                args.get("url", ""),
+                args.get("actions", [])
             )
         elif function_name == "take_screenshot":
             return self.take_screenshot(args.get("description", ""))
