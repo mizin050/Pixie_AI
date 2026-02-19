@@ -15,6 +15,153 @@ class WhatsAppSelenium:
         self.driver = None
         print("✓ WhatsApp Selenium initialized")
     
+    def send_file(self, recipient: str, file_path: str, caption: str = "") -> Dict[str, Any]:
+        """
+        Send file (photo, video, document) via WhatsApp
+        
+        Args:
+            recipient: Phone number or contact name
+            file_path: Path to file on desktop (e.g., "C:/Users/You/Desktop/photo.jpg")
+            caption: Optional caption for the file
+        
+        Returns:
+            Result dict with success status
+        """
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.common.keys import Keys
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from selenium.webdriver.chrome.options import Options
+            
+            print(f"\n📎 Sending file via WhatsApp...")
+            print(f"   To: {recipient}")
+            print(f"   File: {file_path}")
+            
+            # Check if file exists
+            if not os.path.exists(file_path):
+                return {
+                    "success": False,
+                    "error": f"File not found: {file_path}"
+                }
+            
+            # Detect if recipient is phone or name
+            is_phone_number = recipient.replace('+', '').replace('-', '').replace(' ', '').isdigit()
+            
+            # Setup Chrome
+            chrome_options = Options()
+            chrome_options.add_argument(f'--user-data-dir={self.session_dir}')
+            chrome_options.add_argument('--profile-directory=Default')
+            
+            self.driver = webdriver.Chrome(options=chrome_options)
+            
+            try:
+                # Open WhatsApp Web
+                print("   Opening WhatsApp Web...")
+                self.driver.get('https://web.whatsapp.com')
+                
+                # Wait for load
+                WebDriverWait(self.driver, 60).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+                )
+                
+                print("   ✓ WhatsApp Web loaded")
+                
+                # Open chat
+                if is_phone_number:
+                    phone_clean = recipient.replace('+', '').replace('-', '').replace(' ', '')
+                    self.driver.get(f'https://web.whatsapp.com/send?phone={phone_clean}')
+                else:
+                    # Search by name
+                    search_box = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+                    )
+                    search_box.click()
+                    time.sleep(0.5)
+                    search_box.send_keys(recipient)
+                    time.sleep(1.5)
+                    
+                    first_result = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@role="listitem"]'))
+                    )
+                    first_result.click()
+                    time.sleep(1)
+                
+                # Click attach button
+                print("   Clicking attach button...")
+                attach_btn = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[@title="Attach"]'))
+                )
+                attach_btn.click()
+                time.sleep(1)
+                
+                # Click appropriate option based on file type
+                file_ext = os.path.splitext(file_path)[1].lower()
+                if file_ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                    print("   Selecting photo/video option...")
+                    # Photos & Videos
+                    media_input = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//input[@accept="image/*,video/mp4,video/3gpp,video/quicktime"]'))
+                    )
+                else:
+                    print("   Selecting document option...")
+                    # Document
+                    media_input = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//input[@accept="*"]'))
+                    )
+                
+                # Send file path
+                print("   Uploading file...")
+                media_input.send_keys(os.path.abspath(file_path))
+                time.sleep(2)
+                
+                # Add caption if provided
+                if caption:
+                    print(f"   Adding caption: {caption[:30]}...")
+                    caption_box = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+                    )
+                    caption_box.send_keys(caption)
+                    time.sleep(0.5)
+                
+                # Click send
+                print("   Sending...")
+                send_btn = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, '//span[@data-icon="send"]'))
+                )
+                send_btn.click()
+                
+                # Wait for send
+                time.sleep(3)
+                
+                print("   ✅ File sent!")
+                
+                self.driver.quit()
+                
+                return {
+                    "success": True,
+                    "method": "selenium",
+                    "recipient": recipient,
+                    "file": file_path,
+                    "message": "File sent successfully"
+                }
+                
+            except Exception as e:
+                if self.driver:
+                    self.driver.quit()
+                raise e
+                
+        except Exception as e:
+            error_msg = str(e)
+            print(f"   ❌ Error: {error_msg}")
+            
+            return {
+                "success": False,
+                "error": error_msg,
+                "method": "selenium"
+            }
+    
     def send_message(self, phone: str, message: str) -> Dict[str, Any]:
         """
         Send WhatsApp message using Selenium
@@ -176,5 +323,31 @@ def send_whatsapp_message(phone: str, message: str) -> str:
     
     if result["success"]:
         return f"✅ WhatsApp message sent to {phone}"
+    else:
+        return f"❌ Failed: {result['error']}"
+
+
+def send_whatsapp_file(recipient: str, file_path: str, caption: str = "") -> str:
+    """
+    Send file via WhatsApp (photos, videos, documents)
+    
+    Args:
+        recipient: Phone number or contact name
+        file_path: Path to file (e.g., "C:/Users/You/Desktop/photo.jpg")
+        caption: Optional caption
+    
+    Returns:
+        Success/error message string
+    
+    Examples:
+        send_whatsapp_file("John", "C:/Users/Me/Desktop/photo.jpg")
+        send_whatsapp_file("+1234567890", "report.pdf", "Here's the report")
+        send_whatsapp_file("Mom", "vacation.jpg", "Miss you!")
+    """
+    wa = get_whatsapp_selenium()
+    result = wa.send_file(recipient, file_path, caption)
+    
+    if result["success"]:
+        return f"✅ File sent to {recipient}"
     else:
         return f"❌ Failed: {result['error']}"
