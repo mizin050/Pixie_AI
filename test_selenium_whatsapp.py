@@ -17,13 +17,28 @@ def test_selenium_whatsapp():
     print("  3. After that: Session saved, works automatically!")
     print("  4. Sends message in 10-15 seconds")
     print()
+    print("You can send by:")
+    print("  • Phone number: +1234567890")
+    print("  • Contact name: John, Mom, Boss, etc.")
+    print()
     print("="*70)
     print()
     
     # Get test details
-    phone = input("Enter phone number (e.g., +1234567890): ").strip()
+    print("Choose method:")
+    print("  1. Send by phone number")
+    print("  2. Send by contact name")
+    choice = input("Enter choice (1 or 2): ").strip()
     
-    if not phone:
+    if choice == "1":
+        recipient = input("Enter phone number (e.g., +1234567890): ").strip()
+    elif choice == "2":
+        recipient = input("Enter contact name (e.g., John): ").strip()
+    else:
+        print("❌ Invalid choice")
+        return
+    
+    if not recipient:
         print("❌ No phone number provided")
         return
     
@@ -38,7 +53,7 @@ def test_selenium_whatsapp():
     print()
     
     # Send message
-    result = send_whatsapp_message(phone, message)
+    result = send_whatsapp_message(recipient, message)
     
     print()
     print("="*70)

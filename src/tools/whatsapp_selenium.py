@@ -20,7 +20,7 @@ class WhatsAppSelenium:
         Send WhatsApp message using Selenium
         
         Args:
-            phone: Phone number (e.g., "1234567890" or "+1234567890")
+            phone: Phone number (e.g., "1234567890" or "+1234567890") OR contact name (e.g., "John")
             message: Message to send
         
         Returns:
@@ -38,8 +38,8 @@ class WhatsAppSelenium:
             print(f"   To: {phone}")
             print(f"   Message: {message[:50]}...")
             
-            # Clean phone number
-            phone_clean = phone.replace('+', '').replace('-', '').replace(' ', '')
+            # Detect if it's a phone number or contact name
+            is_phone_number = phone.replace('+', '').replace('-', '').replace(' ', '').isdigit()
             
             # Setup Chrome
             chrome_options = Options()
@@ -64,9 +64,33 @@ class WhatsAppSelenium:
                 
                 print("   ✓ WhatsApp Web loaded")
                 
-                # Open chat
-                print(f"   Opening chat...")
-                self.driver.get(f'https://web.whatsapp.com/send?phone={phone_clean}')
+                if is_phone_number:
+                    # Method 1: Direct URL with phone number
+                    phone_clean = phone.replace('+', '').replace('-', '').replace(' ', '')
+                    print(f"   Opening chat by phone number...")
+                    self.driver.get(f'https://web.whatsapp.com/send?phone={phone_clean}')
+                else:
+                    # Method 2: Search by contact name
+                    print(f"   Searching for contact: {phone}...")
+                    
+                    # Click search box
+                    search_box = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+                    )
+                    search_box.click()
+                    time.sleep(0.5)
+                    
+                    # Type contact name
+                    search_box.send_keys(phone)
+                    time.sleep(1.5)  # Wait for search results
+                    
+                    # Click first result
+                    print(f"   Clicking first search result...")
+                    first_result = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@role="listitem"]'))
+                    )
+                    first_result.click()
+                    time.sleep(1)
                 
                 # Wait for message box
                 print("   Waiting for message box...")
@@ -92,7 +116,7 @@ class WhatsAppSelenium:
                 return {
                     "success": True,
                     "method": "selenium",
-                    "phone": phone,
+                    "recipient": phone,
                     "message": "Message sent successfully"
                 }
                 
@@ -110,6 +134,8 @@ class WhatsAppSelenium:
                 error_msg += "\n   Install Chrome: https://www.google.com/chrome/"
             elif "qr" in error_msg.lower() or "scan" in error_msg.lower():
                 error_msg += "\n   Please scan QR code in WhatsApp Web"
+            elif not is_phone_number:
+                error_msg += f"\n   Contact '{phone}' not found. Make sure the name is exact."
             
             return {
                 "success": False,
@@ -134,11 +160,16 @@ def send_whatsapp_message(phone: str, message: str) -> str:
     Send WhatsApp message (main function for Pixie)
     
     Args:
-        phone: Phone number (e.g., "+1234567890")
+        phone: Phone number (e.g., "+1234567890") OR contact name (e.g., "John")
         message: Message to send
     
     Returns:
         Success/error message string
+    
+    Examples:
+        send_whatsapp_message("+1234567890", "Hello!")  # By phone
+        send_whatsapp_message("John", "Hello!")  # By name
+        send_whatsapp_message("Mom", "Love you!")  # By name
     """
     wa = get_whatsapp_selenium()
     result = wa.send_message(phone, message)
