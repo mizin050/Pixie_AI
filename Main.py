@@ -12,6 +12,7 @@ from Backend.Model import FirstLayerDMM
 from Backend.RealtimeSearchEngine import RealtimeSearchEngine
 from Backend.Automation import TranslateAndExecute
 from Backend.TextToSpeech import TextToSpeech
+from Backend.FolderContext import handle_folder_command
 from dotenv import dotenv_values
 from asyncio import run
 from time import sleep
@@ -85,6 +86,15 @@ def MainExecution():
     SetAssistantStatus("Listening...")
     Query = SpeechRecognition()
     ShowTextToScreen(f"{Username} : {Query}")
+
+    folder_command_response = handle_folder_command(Query)
+    if folder_command_response:
+        SetAssistantStatus("Answering...")
+        ShowTextToScreen(f"{Assistantname} : {folder_command_response}")
+        TextToSpeech(folder_command_response)
+        SetAssistantStatus("Available ...")
+        return True
+
     SetAssistantStatus("Thinking...")
     Decision = FirstLayerDMM(Query)
 
@@ -100,7 +110,7 @@ def MainExecution():
     )
 
     for queries in Decision:
-        if "generate " in queries:
+        if queries.strip().lower().startswith("generate image"):
             ImageGenerationQuery = str(queries)
             ImageExecution = True
 
@@ -113,7 +123,7 @@ def MainExecution():
 
     if ImageExecution == True:
 
-        with open(r"Frontend\Files\ImageGeneratoion.data", "w") as file:
+        with open(r"Frontend\Files\ImageGeneration.data", "w") as file:
             file.write(f"{ImageGenerationQuery},True")
 
         try:

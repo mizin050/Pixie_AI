@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 import requests
 from dotenv import dotenv_values # Importing dotenv_values to read environment variables from a .env file.
+from Backend.FolderContext import get_folder_context_message
 
 # Resolve project paths relative to this file, not the current working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -169,7 +170,10 @@ def RealtimeSearchEngine(prompt):
     # Build per-request context to avoid mutating shared global state.
     search_context = GoogleSearch(prompt)
     finance_context = FinanceSnapshot(prompt)
+    folder_context = get_folder_context_message()
     conversation = SystemChatBot + [{"role": "system", "content": search_context}]
+    if folder_context:
+        conversation.append({"role": "system", "content": folder_context})
     if finance_context:
         conversation.append({"role": "system", "content": finance_context})
     recent_messages = messages[-12:]

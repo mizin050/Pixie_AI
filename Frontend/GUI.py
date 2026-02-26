@@ -27,23 +27,35 @@ for file_name in ["Mic.data", "Status.data", "Responses.data", "Database.data"]:
 
 # ---------------- STATUS & MIC CONTROL ----------------
 
+def _ensure_state_file(file_name, default_value=""):
+    os.makedirs(TempDirPath, exist_ok=True)
+    file_path = os.path.join(TempDirPath, file_name)
+    if not os.path.exists(file_path):
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(default_value)
+    return file_path
+
 def SetMicrophoneStatus(Command):
-    with open(os.path.join(TempDirPath, "Mic.data"), "w", encoding="utf-8") as file:
+    file_path = _ensure_state_file("Mic.data", "False")
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(Command)
 
 
 def GetMicrophoneStatus():
-    with open(os.path.join(TempDirPath, "Mic.data"), "r", encoding="utf-8") as file:
+    file_path = _ensure_state_file("Mic.data", "False")
+    with open(file_path, "r", encoding="utf-8") as file:
         return file.read().strip()
 
 
 def SetAssistantStatus(Status):
-    with open(os.path.join(TempDirPath, "Status.data"), "w", encoding="utf-8") as file:
+    file_path = _ensure_state_file("Status.data", "Available ...")
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(Status)
 
 
 def GetAssistantStatus():
-    with open(os.path.join(TempDirPath, "Status.data"), "r", encoding="utf-8") as file:
+    file_path = _ensure_state_file("Status.data", "Available ...")
+    with open(file_path, "r", encoding="utf-8") as file:
         return file.read().strip()
 
 
@@ -66,7 +78,8 @@ def TempDirectoryPath(filename):
 
 
 def ShowTextToScreen(text):
-    with open(os.path.join(TempDirPath, "Responses.data"), "w", encoding="utf-8") as file:
+    file_path = _ensure_state_file("Responses.data", "")
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(text)
 
 
@@ -110,6 +123,14 @@ class ChatAPI:
                 from Backend.Model import FirstLayerDMM
                 from Backend.RealtimeSearchEngine import RealtimeSearchEngine
                 from Backend.Automation import TranslateAndExecute
+                from Backend.FolderContext import handle_folder_command
+
+                folder_command_response = handle_folder_command(query)
+                if folder_command_response:
+                    SetAssistantStatus("Answering...")
+                    ShowTextToScreen(f"{Assistantname} : {folder_command_response}")
+                    SetAssistantStatus("Available ...")
+                    return
 
                 SetAssistantStatus("Thinking...")
                 decisions = FirstLayerDMM(query)
@@ -139,7 +160,7 @@ class ChatAPI:
                     answer = "Done."
 
                 if image_execution:
-                    with open(r"Frontend\Files\ImageGeneratoion.data", "w", encoding="utf-8") as file:
+                    with open(r"Frontend\Files\ImageGeneration.data", "w", encoding="utf-8") as file:
                         file.write(f"{image_generation_query},True")
                     try:
                         subprocess.Popen(

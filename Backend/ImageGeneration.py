@@ -50,6 +50,32 @@ def _model_candidates() -> list[str]:
     return DEFAULT_MODELS
 
 
+def _normalize_prompt(raw_prompt: str) -> str:
+    """Clean routing prefixes and improve prompts for diagram/chart style outputs."""
+    prompt = (raw_prompt or "").strip()
+    lower = prompt.lower()
+    if lower.startswith("generate image"):
+        prompt = prompt[len("generate image"):].strip(" :,-")
+
+    lower_clean = prompt.lower()
+    diagram_keywords = (
+        "diagram",
+        "flowchart",
+        "chart",
+        "graph",
+        "infographic",
+        "mind map",
+        "architecture diagram",
+        "org chart",
+    )
+    if any(keyword in lower_clean for keyword in diagram_keywords):
+        prompt = (
+            f"{prompt}, clean white background, 2D vector style, "
+            "clear labels, readable typography, presentation-ready layout"
+        )
+    return prompt
+
+
 async def query(payload: dict) -> bytes:
     last_error = None
     for model in _model_candidates():
@@ -78,6 +104,10 @@ async def query(payload: dict) -> bytes:
 async def generate_images(prompt: str) -> list[Path]:
     if not HF_API_KEY:
         raise RuntimeError("Missing Hugging Face API key. Set HuggingFaceAPIKey in .env.")
+
+    prompt = _normalize_prompt(prompt)
+    if not prompt:
+        raise RuntimeError("Empty image prompt.")
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     tasks = []

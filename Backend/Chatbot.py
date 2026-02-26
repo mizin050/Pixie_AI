@@ -3,6 +3,7 @@ from json import load, dump  # Importing functions to read and write JSON files.
 import datetime  # Importing the datetime module for real-time date and time information.
 from dotenv import dotenv_values  # Importing dotenv_values to load environment variables from a .env file.
 from pathlib import Path
+from Backend.FolderContext import get_folder_context_message
 
 # Resolve project paths relative to this file.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -81,9 +82,14 @@ def chatBot(Query):
         messages.append({"role": "user", "content": f"{Query}"})
         
         # Make a request to the Groq API to get a response.
+        folder_context = get_folder_context_message()
+        context_messages = []
+        if folder_context:
+            context_messages.append({"role": "system", "content": folder_context})
+
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=SystemChatBot + [{"role": "system", "content": RealtimeInformation()}] + messages,  # Include system instructions, real-time info, & messages
+            messages=SystemChatBot + context_messages + [{"role": "system", "content": RealtimeInformation()}] + messages,  # Include system instructions, folder context, real-time info, & messages
             temperature=0.7,  # Adjust response randomness (higher means more random).
             top_p=1,  # Use nucleus sampling (controls diversity).
             stream=True,  # Enable streaming response.

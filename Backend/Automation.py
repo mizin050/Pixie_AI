@@ -1,6 +1,5 @@
 from AppOpener import close, open as appopen
 from webbrowser import open as webopen
-from pywhatkit import search, playonyt
 from dotenv import dotenv_values
 from bs4 import BeautifulSoup
 from rich import print
@@ -13,6 +12,7 @@ import asyncio
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
+import threading
 
 # Load environment variables
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -40,7 +40,32 @@ classes = ["zCubwf", "hgKElc", "LTKOO sY7ric", "Z0LcW", "gsrt vk_bk FzvWSb YwPhn
 
 useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
 
-client = Groq(api_key=GroqAPIKey) if GroqAPIKey else None
+_client = None
+_client_init_error = None
+_client_lock = threading.Lock()
+
+
+def _get_groq_client():
+    global _client, _client_init_error
+    if _client is not None:
+        return _client
+    if _client_init_error is not None:
+        return None
+    if not GroqAPIKey:
+        _client_init_error = "Missing Groq API key."
+        return None
+
+    with _client_lock:
+        if _client is not None:
+            return _client
+        if _client_init_error is not None:
+            return None
+        try:
+            _client = Groq(api_key=GroqAPIKey)
+        except Exception as exc:
+            _client_init_error = str(exc)
+            _client = None
+    return _client
 
 professional_responses = [
     "Your satisfaction is my top priority; feel free to reach out if there's anything else I can help you with.",
@@ -51,7 +76,7 @@ messages = []
 SystemChatBot = [{"role": "system", "content": f"Hello, I am {env_vars.get('Username')}, You're a content writer. You have to write content like letters."}]
 
 def GoogleSearch(Topic):
-    search(Topic)
+    webbrowser.open(f"https://www.google.com/search?q={quote_plus(Topic)}")
     return True
 
 def Content(Topic):
@@ -60,25 +85,29 @@ def Content(Topic):
         subprocess.Popen([default_text_editor, File])
 
     def ContentWriterAI(prompt):
+        client = _get_groq_client()
         if client is None:
-            return "Unable to generate content: missing Groq API key in .env."
+            return "Unable to generate content right now (Groq client unavailable)."
         messages.append({"role": "user", "content": f"{prompt}"})
-        completion = client.chat.completions.create(
-            model=GroqModel,
-            messages=SystemChatBot + messages,
-            max_tokens=2048,
-            temperature=0.7,
-            top_p=1,
-            stream=True,
-            stop=None
-        )
-        Answer = ""
-        for chunk in completion:
-            if chunk.choices[0].delta.content:
-                Answer += chunk.choices[0].delta.content
-        Answer = Answer.replace("</s>", "")
-        messages.append({"role": "assistant", "content": Answer})
-        return Answer
+        try:
+            completion = client.chat.completions.create(
+                model=GroqModel,
+                messages=SystemChatBot + messages,
+                max_tokens=2048,
+                temperature=0.7,
+                top_p=1,
+                stream=True,
+                stop=None
+            )
+            Answer = ""
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    Answer += chunk.choices[0].delta.content
+            Answer = Answer.replace("</s>", "")
+            messages.append({"role": "assistant", "content": Answer})
+            return Answer
+        except Exception as exc:
+            return f"Unable to generate content right now: {exc}"
 
     Topic = str(Topic).strip()
     if Topic.lower().startswith("content "):
@@ -103,7 +132,7 @@ def YouTubeSearch(Topic):
     return True
 
 def PlayYouTube(query):
-    playonyt(query)
+    webbrowser.open(f"https://www.youtube.com/results?search_query={quote_plus(query)}")
     return True
 
 def OpenApp(AppName):

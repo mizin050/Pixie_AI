@@ -55,3 +55,5 @@ Data/ChatLog.json
 
 # Frontend state files
 Frontend/Files/*.data
+
+BUILD_FROM_SCRATCH.md
