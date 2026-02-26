@@ -124,6 +124,14 @@ class ChatAPI:
                 from Backend.RealtimeSearchEngine import RealtimeSearchEngine
                 from Backend.Automation import TranslateAndExecute
                 from Backend.FolderContext import handle_folder_command
+                from Backend.TelegramBridge import handle_local_telegram_command
+
+                telegram_command_response = handle_local_telegram_command(query)
+                if telegram_command_response:
+                    SetAssistantStatus("Answering...")
+                    ShowTextToScreen(f"{Assistantname} : {telegram_command_response}")
+                    SetAssistantStatus("Available ...")
+                    return
 
                 folder_command_response = handle_folder_command(query)
                 if folder_command_response:

@@ -2,6 +2,15 @@
 .env
 *.env
 
+# Secrets and credentials
+secrets/
+*.json
+!package.json
+!package-lock.json
+*.key
+*.pem
+*.p12
+
 # Python
 __pycache__/
 *.py[cod]

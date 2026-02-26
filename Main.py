@@ -13,6 +13,7 @@ from Backend.RealtimeSearchEngine import RealtimeSearchEngine
 from Backend.Automation import TranslateAndExecute
 from Backend.TextToSpeech import TextToSpeech
 from Backend.FolderContext import handle_folder_command
+from Backend.TelegramBridge import handle_local_telegram_command, start_telegram_service
 from dotenv import dotenv_values
 from asyncio import run
 from time import sleep
@@ -69,6 +70,7 @@ def ShowChatsOnGUI():
         File.close()
 
 def InitialExecution():
+    start_telegram_service()
     SetMicrophoneStatus("False")
     ShowTextToScreen("")
     ShowDefaultChatIfNoChats()
@@ -86,6 +88,14 @@ def MainExecution():
     SetAssistantStatus("Listening...")
     Query = SpeechRecognition()
     ShowTextToScreen(f"{Username} : {Query}")
+
+    telegram_command_response = handle_local_telegram_command(Query)
+    if telegram_command_response:
+        SetAssistantStatus("Answering...")
+        ShowTextToScreen(f"{Assistantname} : {telegram_command_response}")
+        TextToSpeech(telegram_command_response)
+        SetAssistantStatus("Available ...")
+        return True
 
     folder_command_response = handle_folder_command(Query)
     if folder_command_response:
