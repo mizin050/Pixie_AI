@@ -39,10 +39,11 @@
         display: flex;
         flex-direction: row;
         padding: 40px;
-        max-width: calc(100% - 520px);
+        max-width: calc(100% - 700px);
         position: relative;
         align-items: center;
         justify-content: center;
+        -webkit-app-region: drag;
       }
       .fox-container {
         flex: 1;
@@ -50,33 +51,37 @@
         align-items: center;
         justify-content: center;
         padding: 0;
+        -webkit-app-region: drag;
       }
       #fox-canvas {
         width: 100%;
         height: 100%;
         display: block;
+        -webkit-app-region: drag;
       }
       .chat-side {
-        width: 480px;
+        width: 660px;
         padding: 0.37cm 20px;
         display: flex;
         align-items: center;
         justify-content: center;
+        -webkit-app-region: no-drag;
       }
       .chat-container {
         width: 100%;
         height: calc(100vh - 0.74cm);
         background: rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(40px) saturate(180%);
-        border-radius: 32px;
+        border-radius: 18px;
         border: 1px solid rgba(255, 255, 255, 0.25);
         box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        -webkit-app-region: no-drag;
       }
       .chat-header {
-        padding: 24px 20px 20px;
+        padding: 14px 16px 12px;
         background: linear-gradient(
           180deg,
           rgba(255, 255, 255, 0.15) 0%,
@@ -86,22 +91,23 @@
         display: flex;
         align-items: center;
         gap: 16px;
+        -webkit-app-region: no-drag;
       }
       .chat-title {
         font-family: "Syne", sans-serif;
-        font-size: 24px;
+        font-size: 18px;
         font-weight: 700;
         color: white;
         flex: 1;
         letter-spacing: 0.5px;
       }
       .mode-toggle {
-        padding: 8px 16px;
+        padding: 6px 14px;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
+        border-radius: 10px;
         color: white;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
@@ -110,12 +116,12 @@
         background: rgba(255, 255, 255, 0.15);
       }
       .clear-btn {
-        padding: 8px 16px;
+        padding: 6px 14px;
         background: rgba(255, 107, 53, 0.2);
         border: 1px solid rgba(255, 107, 53, 0.3);
-        border-radius: 12px;
+        border-radius: 10px;
         color: white;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
@@ -123,13 +129,43 @@
       .clear-btn:hover {
         background: rgba(255, 107, 53, 0.3);
       }
+      .mode-toggle,
+      .clear-btn,
+      .copy-msg-btn {
+        -webkit-app-region: no-drag;
+      }
       .chat-messages {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         padding: 20px;
         display: flex;
         flex-direction: column;
         gap: 16px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 122, 61, 0.85) rgba(255, 255, 255, 0.14);
+        user-select: text;
+        -webkit-user-select: text;
+        -webkit-app-region: no-drag;
+      }
+      .chat-messages::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .chat-messages::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+      }
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #ff874f 0%, #ff6b35 100%);
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.14);
+      }
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #ff9963 0%, #ff7b45 100%);
+      }
+      .chat-messages::-webkit-scrollbar-corner {
+        background: rgba(255, 255, 255, 0.14);
       }
       .message {
         display: flex;
@@ -148,6 +184,75 @@
         padding: 12px 16px;
         border-radius: 16px;
         word-wrap: break-word;
+        position: relative;
+      }
+      .message-text {
+        white-space: pre-wrap;
+        line-height: 1.35;
+        font-size: 14px;
+      }
+      .md-p {
+        margin: 4px 0;
+      }
+      .md-gap {
+        height: 8px;
+      }
+      .md-heading {
+        font-weight: 700;
+        margin: 6px 0 4px;
+      }
+      .md-h1 {
+        font-size: 1.02rem;
+      }
+      .md-h2 {
+        font-size: 0.98rem;
+      }
+      .md-h3 {
+        font-size: 0.95rem;
+      }
+      .md-bullet,
+      .md-numbered {
+        margin: 2px 0;
+      }
+      .md-inline-code {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+      .md-code-wrap {
+        margin: 10px 0;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(8, 10, 16, 0.92);
+      }
+      .md-code-head {
+        padding: 8px 12px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-family: Consolas, "Courier New", monospace;
+      }
+      .md-code {
+        margin: 0;
+        padding: 12px;
+        overflow-x: auto;
+      }
+      .md-code code {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #e9f1ff;
+        white-space: pre;
+        display: block;
+      }
+      .md-sep {
+        border-top: 1px solid rgba(255, 255, 255, 0.35);
+        margin: 8px 0;
       }
       .message.user .message-bubble {
         background: linear-gradient(135deg, #ff6b35 0%, #f97316 100%);
@@ -165,10 +270,42 @@
         color: rgba(255, 255, 255, 0.6);
         margin-top: 4px;
       }
+      .copy-msg-btn {
+        position: absolute;
+        right: 10px;
+        top: 8px;
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: 7px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.18);
+        color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+      }
+      .copy-msg-btn:hover {
+        background: rgba(0, 0, 0, 0.32);
+      }
+      .copy-msg-btn svg {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .copy-msg-btn.copied {
+        color: #bbffce;
+      }
       .chat-input-container {
         padding: 20px;
         background: rgba(255, 255, 255, 0.05);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
+        -webkit-app-region: no-drag;
       }
       .input-wrapper {
         display: flex;
@@ -185,9 +322,17 @@
         font-size: 15px;
         font-family: "Outfit", sans-serif;
         outline: none;
+        -webkit-app-region: no-drag;
       }
       .chat-input::placeholder {
         color: rgba(255, 255, 255, 0.5);
+      }
+      .chat-input,
+      .chat-title,
+      .message-text,
+      .md-code code {
+        user-select: text;
+        -webkit-user-select: text;
       }
       .send-btn {
         width: 48px;
@@ -202,6 +347,7 @@
         align-items: center;
         justify-content: center;
         transition: transform 0.2s;
+        -webkit-app-region: no-drag;
       }
       .send-btn:hover {
         transform: scale(1.05);
@@ -311,6 +457,12 @@
 
       let mixer;
       let foxModel = null;
+      const foxBaseRotation = {
+        x: (-60 * 3.14) / 360,
+        y: -(2 * 3.14) / 4,
+      };
+      const foxLookTarget = { x: 0, y: 0 };
+      const foxLookCurrent = { x: 0, y: 0 };
       let foxSpawnProgress = 0;
       const foxStartScale = 0.2;
       const foxTargetScale = 3.0;
@@ -322,7 +474,7 @@
           console.log("Fox model loaded successfully!", gltf);
           const fox = gltf.scene;
           fox.scale.set(foxStartScale, foxStartScale, foxStartScale);
-          fox.rotation.set((-60 * 3.14) / 360, -(2 * 3.14) / 4, 0);
+          fox.rotation.set(foxBaseRotation.x, foxBaseRotation.y, 0);
           scene.add(fox);
           foxModel = fox;
           console.log("Fox added to scene");
@@ -367,6 +519,13 @@
             foxStartScale + (foxTargetScale - foxStartScale) * eased;
           foxModel.scale.set(scale, scale, scale);
         }
+        if (foxModel) {
+          // Smooth, subtle follow effect so the fox appears to look at cursor.
+          foxLookCurrent.x += (foxLookTarget.x - foxLookCurrent.x) * 0.09;
+          foxLookCurrent.y += (foxLookTarget.y - foxLookCurrent.y) * 0.09;
+          foxModel.rotation.y = foxBaseRotation.y + foxLookCurrent.x * 0.36;
+          foxModel.rotation.x = foxBaseRotation.x + foxLookCurrent.y * 0.2;
+        }
         controls.update();
 
         renderer.render(scene, camera);
@@ -387,6 +546,20 @@
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
       });
 
+      window.addEventListener("mousemove", (event) => {
+        const vw = window.innerWidth || 1;
+        const vh = window.innerHeight || 1;
+        const nx = (event.clientX / vw) * 2 - 1;
+        const ny = (event.clientY / vh) * 2 - 1;
+        foxLookTarget.x = Math.max(-1, Math.min(1, nx));
+        foxLookTarget.y = Math.max(-1, Math.min(1, ny));
+      });
+
+      window.addEventListener("mouseleave", () => {
+        foxLookTarget.x = 0;
+        foxLookTarget.y = 0;
+      });
+
       // Chat Functionality
       const messageInput = document.getElementById("messageInput");
       const sendButton = document.getElementById("sendButton");
@@ -399,7 +572,15 @@
         const messageDiv = document.createElement("div");
         messageDiv.className = "message user";
         messageDiv.innerHTML = `
-        <div class="message-bubble"><div class="message-text">${escapeHtml(text)}</div></div>
+        <div class="message-bubble">
+          <button class="copy-msg-btn" onclick="copyMessage(this)" title="Copy message" aria-label="Copy message">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+              <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+          <div class="message-text">${escapeHtml(text)}</div>
+        </div>
         <div class="message-time">${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
       `;
         messagesContainer.appendChild(messageDiv);
@@ -417,6 +598,116 @@
         return div.innerHTML;
       }
 
+      function renderInlineMarkdown(text) {
+        let html = escapeHtml(String(text || ""));
+        html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
+        html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        return html;
+      }
+
+      window.copyMessage = async function (button) {
+        const copyIcon = `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+            <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        `;
+        const doneIcon = `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        `;
+        try {
+          const bubble = button.closest(".message-bubble");
+          if (!bubble) return;
+          const textNode = bubble.querySelector(".message-text");
+          const content = textNode ? textNode.innerText : bubble.innerText;
+          await navigator.clipboard.writeText(content || "");
+          button.classList.add("copied");
+          button.innerHTML = doneIcon;
+          setTimeout(() => {
+            button.classList.remove("copied");
+            button.innerHTML = copyIcon;
+          }, 1200);
+        } catch (err) {
+          button.classList.remove("copied");
+          button.innerHTML = copyIcon;
+          setTimeout(() => {
+            button.innerHTML = copyIcon;
+          }, 1200);
+        }
+      };
+
+      function renderStructuredText(text) {
+        const raw = String(text || "").replace(/\r\n/g, "\n");
+        const blocks = raw.split("```");
+        const rendered = [];
+
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+
+          if (i % 2 === 1) {
+            const codeLines = block.split("\n");
+            let lang = (codeLines.shift() || "").trim();
+            let code = codeLines.join("\n");
+            if (!code && lang) {
+              code = lang;
+              lang = "text";
+            }
+            if (!lang) lang = "text";
+
+            rendered.push(
+              `<div class="md-code-wrap"><div class="md-code-head">${escapeHtml(
+                lang,
+              )}</div><pre class="md-code"><code>${escapeHtml(code).replace(/\n$/, "")}</code></pre></div>`,
+            );
+            continue;
+          }
+
+          const lines = block.split("\n");
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) {
+              rendered.push('<div class="md-gap"></div>');
+              continue;
+            }
+
+            const heading = line.match(/^(#{1,6})\s+(.*)$/);
+            if (heading) {
+              const level = Math.min(3, heading[1].length);
+              rendered.push(
+                `<div class="md-heading md-h${level}">${renderInlineMarkdown(heading[2])}</div>`,
+              );
+              continue;
+            }
+
+            if (/^[-=]{3,}$/.test(line)) {
+              rendered.push('<div class="md-sep"></div>');
+              continue;
+            }
+
+            if (/^[-*]\s+/.test(line)) {
+              rendered.push(
+                `<div class="md-bullet">&bull; ${renderInlineMarkdown(line.replace(/^[-*]\s+/, ""))}</div>`,
+              );
+              continue;
+            }
+
+            if (/^\d+\.\s+/.test(line)) {
+              rendered.push(
+                `<div class="md-numbered">${renderInlineMarkdown(line)}</div>`,
+              );
+              continue;
+            }
+
+            rendered.push(`<div class="md-p">${renderInlineMarkdown(rawLine)}</div>`);
+          }
+        }
+
+        return rendered.join("");
+      }
+
       sendButton.addEventListener("click", sendMessage);
       messageInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -429,7 +720,15 @@
         const messageDiv = document.createElement("div");
         messageDiv.className = "message assistant";
         messageDiv.innerHTML = `
-        <div class="message-bubble"><div class="message-text">${escapeHtml(text)}</div></div>
+        <div class="message-bubble">
+          <button class="copy-msg-btn" onclick="copyMessage(this)" title="Copy message" aria-label="Copy message">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+              <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+          <div class="message-text">${renderStructuredText(text)}</div>
+        </div>
         <div class="message-time">${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
       `;
         messagesContainer.appendChild(messageDiv);

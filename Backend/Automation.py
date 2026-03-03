@@ -13,11 +13,12 @@ import os
 from pathlib import Path
 from urllib.parse import quote_plus
 import threading
+from Backend.FolderContext import get_effective_folder
+from Backend.ResearchTool import generate_research_report
 
 # Load environment variables
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env"
-DATA_DIR = PROJECT_ROOT / "Data"
 env_vars = dotenv_values(ENV_PATH)
 GroqAPIKey = (
     env_vars.get("GroqAPIKey")
@@ -116,15 +117,21 @@ def Content(Topic):
         return False
 
     ContentByAI = ContentWriterAI(Topic)
-    file_path = DATA_DIR / f"{Topic.lower().replace(' ', '')}.txt"
-    
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    output_dir = get_effective_folder() / "content"
+    file_path = output_dir / f"{Topic.lower().replace(' ', '')}.txt"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(ContentByAI)
     
     OpenNotepad(str(file_path))
     return True
+
+
+def Research(Topic):
+    ok, message = generate_research_report(Topic)
+    print(message)
+    return message if ok else f"Research failed: {message}"
 
 def YouTubeSearch(Topic):
     Url4Search = f"https://www.youtube.com/results?search_query={Topic}"
@@ -204,11 +211,15 @@ async def TranslateAndExecute(Query):
         CloseApp(Query[6:].strip())
     elif lower_query.startswith("content "):
         Content(Query)
+    elif lower_query.startswith("research "):
+        return Research(Query)
     elif "volume" in lower_query or "mute" in lower_query:
         SystemAutomation(Query)
     else:
         result = await GoogleMaps(Query)
         print(result)
+        return result
+    return "Done."
 
 # Example Execution
 if __name__ == "__main__":

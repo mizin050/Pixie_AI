@@ -4,6 +4,7 @@ import tempfile
 import threading
 import time
 import subprocess
+import re
 from asyncio import run
 
 from PIL import Image, ImageDraw
@@ -93,7 +94,7 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 env_vars = dotenv_values(os.path.join(PROJECT_DIR, ".env"))
 Username = env_vars.get("Username") or "User"
 Assistantname = env_vars.get("Assistantname") or "Assistant"
-Functions = ["open", "close", "play", "system", "content", "google search", "youtube search"]
+Functions = ["open", "close", "play", "system", "content", "google search", "youtube search", "research"]
 
 
 class ChatAPI:
@@ -104,6 +105,24 @@ class ChatAPI:
     def toggle_operator_mode(self):
         self.operator_mode = not self.operator_mode
         return {"mode": "Operator" if self.operator_mode else "Chat", "operator_mode": self.operator_mode}
+
+    def start_window_drag(self):
+        """Allow dragging frameless window only when explicitly requested by UI strip."""
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            hwnd = user32.FindWindowW(None, "Pixie")
+            if not hwnd:
+                return {"ok": False}
+
+            WM_NCLBUTTONDOWN = 0x00A1
+            HTCAPTION = 0x0002
+            user32.ReleaseCapture()
+            user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
+            return {"ok": True}
+        except Exception:
+            return {"ok": False}
 
     def send_message(self, message, files=None):
         query = (message or "").strip()
@@ -161,11 +180,14 @@ class ChatAPI:
 
                 for decision in decisions:
                     if not task_execution and any(decision.startswith(func) for func in Functions):
+                        execution_messages = []
                         for each_query in decisions:
-                            run(TranslateAndExecute(each_query))
+                            result = run(TranslateAndExecute(each_query))
+                            if isinstance(result, str) and result.strip() and result.strip().lower() != "done.":
+                                execution_messages.append(result.strip())
                         task_execution = True
                 if task_execution:
-                    answer = "Done."
+                    answer = "\n".join(execution_messages) if 'execution_messages' in locals() and execution_messages else "Done."
 
                 if image_execution:
                     with open(r"Frontend\Files\ImageGeneration.data", "w", encoding="utf-8") as file:
@@ -252,6 +274,7 @@ class PixieWebChatWindow:
             resizable=True,
             hidden=True,
             frameless=True,
+            easy_drag=True,
             on_top=False,
             js_api=self.api,
         )
@@ -356,6 +379,7 @@ base_icon_image = None
 
 is_ui_running = False
 is_mic_running = False
+is_cam_running = False
 is_app_running = True
 start_ui_requested = False
 desired_ui_visible = False
@@ -363,6 +387,7 @@ desired_ui_visible = False
 ui_lock = threading.Lock()
 last_response_blob = ""
 seen_lines = set()
+gesture_service = None
 
 
 def toggle_ui_programmatic():
@@ -390,7 +415,7 @@ def toggle_ui(icon, item):
 
 
 def update_tray_icon():
-    global tray_icon, base_icon_image, is_mic_running
+    global tray_icon, base_icon_image, is_mic_running, is_cam_running
     if tray_icon is None or base_icon_image is None:
         return
 
@@ -422,6 +447,33 @@ def update_tray_icon():
             outline="#FFFFFF",
         )
 
+    if is_cam_running:
+        draw = ImageDraw.Draw(icon_image)
+        width, _ = icon_image.size
+        dot_radius = max(width // 8, 3)
+        dot_x = width - dot_radius - 3
+        dot_y = dot_radius + 3
+
+        draw.ellipse(
+            [
+                dot_x - dot_radius - 1,
+                dot_y - dot_radius - 1,
+                dot_x + dot_radius + 1,
+                dot_y + dot_radius + 1,
+            ],
+            fill="#005A9C",
+        )
+        draw.ellipse(
+            [
+                dot_x - dot_radius,
+                dot_y - dot_radius,
+                dot_x + dot_radius,
+                dot_y + dot_radius,
+            ],
+            fill="#0078D4",
+            outline="#FFFFFF",
+        )
+
     tray_icon.icon = icon_image
 
 
@@ -432,8 +484,37 @@ def toggle_mic(icon, item):
     update_tray_icon()
 
 
+def toggle_cam(icon, item):
+    global is_cam_running, gesture_service
+
+    if gesture_service is None:
+        try:
+            from Backend.GestureControl import GestureService
+
+            gesture_service = GestureService()
+        except Exception as exc:
+            ShowTextToScreen(f"{Assistantname} : Gesture control unavailable: {exc}")
+            return
+
+    if not is_cam_running:
+        _, message = gesture_service.start()
+        is_cam_running = gesture_service.is_running()
+        ShowTextToScreen(f"{Assistantname} : {message}")
+    else:
+        _, message = gesture_service.stop()
+        is_cam_running = gesture_service.is_running()
+        ShowTextToScreen(f"{Assistantname} : {message}")
+
+    update_tray_icon()
+
+
 def quit_app(icon, item):
     global is_app_running
+    if gesture_service:
+        try:
+            gesture_service.stop()
+        except Exception:
+            pass
     is_app_running = False
     if icon:
         icon.stop()
@@ -449,6 +530,7 @@ def setup_tray():
     menu = pystray.Menu(
         pystray.MenuItem("Pixie UI", toggle_ui),
         pystray.MenuItem("Mic", toggle_mic),
+        pystray.MenuItem("Cam", toggle_cam),
         pystray.MenuItem("Quit", quit_app),
     )
 
@@ -464,10 +546,26 @@ def _sync_mic_state_from_file():
         update_tray_icon()
 
 
+def _sync_camera_state():
+    global is_cam_running, gesture_service
+    if not gesture_service:
+        return
+
+    running = gesture_service.is_running()
+    if running != is_cam_running:
+        is_cam_running = running
+        if not running:
+            error = gesture_service.last_error()
+            if error:
+                ShowTextToScreen(f"{Assistantname} : Gesture control stopped: {error}")
+        update_tray_icon()
+
+
 def _sync_chat_from_files():
     global last_response_blob
 
     _sync_mic_state_from_file()
+    _sync_camera_state()
 
     if not chat_window:
         return
@@ -479,24 +577,65 @@ def _sync_chat_from_files():
         return
 
     last_response_blob = blob
-    for line in blob.splitlines():
-        normalized = line.strip()
-        if not normalized:
-            continue
-        if normalized in seen_lines:
+    assistant_names = {"assistant", "pixie", (Assistantname or "").strip().lower()}
+    user_names = {"user", (Username or "").strip().lower()}
+    header_pattern = re.compile(r"^\s*([^:]+)\s*:\s*(.*)$")
+
+    parsed_messages = []
+    current_role = None
+    current_lines = []
+
+    def flush_current():
+        nonlocal current_role, current_lines
+        if not current_lines:
+            return
+        payload = "\n".join(current_lines).strip()
+        if payload:
+            parsed_messages.append((current_role or "assistant", payload))
+        current_role = None
+        current_lines = []
+
+    for raw_line in blob.splitlines():
+        line = raw_line.rstrip()
+        if not line.strip():
+            if current_lines:
+                current_lines.append("")
             continue
 
-        seen_lines.add(normalized)
+        match = header_pattern.match(line)
+        if match:
+            speaker = match.group(1).strip().lower()
+            content = match.group(2)
 
-        lower_name = normalized.split(":", 1)[0].strip().lower() if ":" in normalized else ""
-        if lower_name in ["assistant", "pixie"]:
-            payload = normalized.split(":", 1)[1].strip() if ":" in normalized else normalized
-            chat_window.add_ai_message(payload)
-        elif ":" in normalized:
-            payload = normalized.split(":", 1)[1].strip()
+            if speaker in assistant_names:
+                flush_current()
+                current_role = "assistant"
+                current_lines = [content]
+                continue
+            if speaker in user_names:
+                flush_current()
+                current_role = "user"
+                current_lines = [content]
+                continue
+
+        if not current_lines:
+            current_role = "assistant"
+            current_lines = [line]
+        else:
+            current_lines.append(line)
+
+    flush_current()
+
+    for role, payload in parsed_messages:
+        message_key = f"{role}|{payload}"
+        if message_key in seen_lines:
+            continue
+
+        seen_lines.add(message_key)
+        if role == "user":
             chat_window.add_user_message(payload)
         else:
-            chat_window.add_ai_message(normalized)
+            chat_window.add_ai_message(payload)
 
 
 def _file_sync_loop():

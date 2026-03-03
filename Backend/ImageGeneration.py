@@ -7,11 +7,11 @@ from time import sleep
 import requests
 from PIL import Image
 from dotenv import dotenv_values
+from Backend.FolderContext import get_effective_folder
 
 # Resolve project paths relative to this file.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = PROJECT_ROOT / ".env"
-DATA_DIR = PROJECT_ROOT / "Data"
 IMAGE_REQUEST_PATH = PROJECT_ROOT / "Frontend" / "Files" / "ImageGeneration.data"
 
 # API details for Hugging Face inference models.
@@ -29,12 +29,13 @@ headers = {"Authorization": f"Bearer {HF_API_KEY}"} if HF_API_KEY else {}
 
 def open_images(prompt: str) -> None:
     """Open generated images for a prompt."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    data_dir = get_effective_folder() / "images"
+    data_dir.mkdir(parents=True, exist_ok=True)
     prompt_slug = prompt.replace(" ", "_")
     files = [f"{prompt_slug}{i}.jpg" for i in range(1, 5)]
 
     for jpg_file in files:
-        image_path = DATA_DIR / jpg_file
+        image_path = data_dir / jpg_file
         try:
             img = Image.open(image_path)
             print(f"Opening image: {image_path}")
@@ -109,7 +110,8 @@ async def generate_images(prompt: str) -> list[Path]:
     if not prompt:
         raise RuntimeError("Empty image prompt.")
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    data_dir = get_effective_folder() / "images"
+    data_dir.mkdir(parents=True, exist_ok=True)
     tasks = []
     for _ in range(4):
         payload = {
@@ -125,7 +127,7 @@ async def generate_images(prompt: str) -> list[Path]:
     saved_files = []
     prompt_slug = prompt.replace(" ", "_")
     for i, image_bytes in enumerate(image_bytes_list, start=1):
-        out_path = DATA_DIR / f"{prompt_slug}{i}.jpg"
+        out_path = data_dir / f"{prompt_slug}{i}.jpg"
         with open(out_path, "wb") as f:
             f.write(image_bytes)
         saved_files.append(out_path)

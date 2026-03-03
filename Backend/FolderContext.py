@@ -6,6 +6,7 @@ from time import time
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = PROJECT_ROOT / "Data" / "FolderContext.json"
+WORKSPACE_PATH = PROJECT_ROOT / "workspace"
 
 ALLOWED_EXTENSIONS = {
     ".txt", ".md", ".rst", ".log", ".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".env",
@@ -90,6 +91,20 @@ def get_active_folder() -> str:
     return state.get("active_folder") or ""
 
 
+def get_workspace_folder() -> Path:
+    WORKSPACE_PATH.mkdir(parents=True, exist_ok=True)
+    return WORKSPACE_PATH
+
+
+def get_effective_folder() -> Path:
+    active = get_active_folder()
+    if active:
+        path = Path(active)
+        if path.exists() and path.is_dir():
+            return path
+    return get_workspace_folder()
+
+
 def _looks_binary(path: Path) -> bool:
     try:
         with open(path, "rb") as f:
@@ -159,13 +174,7 @@ def _build_context_text(folder: Path) -> str:
 
 
 def get_folder_context_message() -> str:
-    folder_text = get_active_folder()
-    if not folder_text:
-        return ""
-
-    folder = Path(folder_text)
-    if not folder.exists() or not folder.is_dir():
-        return ""
+    folder = get_effective_folder()
 
     # Cache briefly to avoid rescanning each user message.
     now = time()
@@ -191,7 +200,9 @@ def handle_folder_command(query: str) -> str:
 
     if lower in {"which folder", "active folder", "current folder context"}:
         active = get_active_folder()
-        return f"Active folder context: {active}" if active else "No folder context is active."
+        if active:
+            return f"Active folder context: {active}"
+        return f"No explicit folder context set. Using default workspace: {get_workspace_folder()}"
 
     prefixes = [
         "use folder ",

@@ -16,3 +16,8 @@ edge-tts
 PyQt5
 webdriver-manager
 pystray
+opencv-python
+mediapipe
+pyautogui
+pywin32
+python-docx

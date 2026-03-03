@@ -28,7 +28,7 @@ Assistantname = env_vars.get("Assistantname")
 DefaultMessage = f'''{Username} : Hello {Assistantname}, How are you?
 {Assistantname} : Welcome {Username}. I am doing well. How may i help you?'''
 subprocesses = []
-Functions = ["open", "close", "play", "system", "content", "google search", "youtube search"]
+Functions = ["open", "close", "play", "system", "content", "google search", "youtube search", "research"]
 
 def ShowDefaultChatIfNoChats():
     File = open(r'Data\ChatLog.json',"r", encoding='utf-8')
@@ -127,8 +127,11 @@ def MainExecution():
     for queries in Decision:
         if TaskExecution == False:
             if any(queries.startswith(func) for func in Functions):
+                execution_messages = []
                 for query in Decision:
-                    run(TranslateAndExecute(query))
+                    result = run(TranslateAndExecute(query))
+                    if isinstance(result, str) and result.strip() and result.strip().lower() != "done.":
+                        execution_messages.append(result.strip())
                 TaskExecution = True
 
     if ImageExecution == True:
@@ -149,6 +152,13 @@ def MainExecution():
         ShowTextToScreen(f"{Assistantname} : {Answer}")
         SetAssistantStatus("Answering...")
         TextToSpeech(Answer)
+        return True
+    elif TaskExecution and not G and not R:
+        Answer = "\n".join(execution_messages) if 'execution_messages' in locals() and execution_messages else "Done."
+        ShowTextToScreen(f"{Assistantname} : {Answer}")
+        SetAssistantStatus("Answering...")
+        TextToSpeech(Answer)
+        SetAssistantStatus("Available ...")
         return True
 
     else:

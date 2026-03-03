@@ -48,6 +48,14 @@ System = f"""Hello, I am {Username}, You are a very accurate and advanced AI cha
 *** Provide Answers In a Professional Way, make sure to add full stops, commas, question marks, and use proper grammar.***
 *** Prefer web results when available. If web results are missing, answer from general knowledge and clearly say if a fact may have changed. ***
 *** If live values are provided in system context, use them directly and do not claim data is unavailable. ***"""
+System += """
+*** Give detailed and practical responses by default. ***
+*** When useful, include sections, steps, and concise bullet points. ***
+*** Prefer markdown-style structure (## headings, 1. numbered steps, - bullet points). ***
+*** If the user asks for how-to guidance, provide clear action steps and examples. ***
+*** For explanatory answers, prefer: ## Quick Answer, ## Steps, ## Tips, ## Next Actions. ***
+*** When providing code, always use fenced code blocks with language tags (for example ```python). ***
+*** Keep blank lines between sections for readability. ***"""
 
 # Try to load the chat log from a JSON file, or create an empty one if it doesn't exist.
 try:
@@ -183,7 +191,7 @@ def RealtimeSearchEngine(prompt):
         completion = client.chat.completions.create(
             model=GroqModel,
             messages=conversation + [{"role": "system", "content": Information()}] + recent_messages,
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=2048,
             top_p=1,
             stream=True,
